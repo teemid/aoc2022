@@ -17,7 +17,7 @@ type WorryLevel = i64;
 struct Monkey {
     items: VecDeque<WorryLevel>,
     operation: Vec<Operation>,
-    inspected_items: i32,
+    inspected_items: i64,
     test: WorryLevel,
     truth_branch: usize,
     false_branch: usize,
@@ -60,17 +60,21 @@ fn main() {
     let mut rounds = 0;
     let mut divisor = 1;
 
-    match args[2].as_str() {
+    let task = args[2].as_str();
+    match task {
         "1" => {
             rounds = 20;
             divisor = 3;
         }
         "2" => {
+            let divisors: Vec<WorryLevel> = monkeys.iter().map(|monkey| monkey.test).collect();
+
             rounds = 10000;
-            divisor = 1;
+            divisor = calculate_divisor(&divisors);
         }
         _ => unreachable!(),
     };
+
 
     for _ in 0..rounds {
         let mut items: Vec<Vec<WorryLevel>> = vec![vec![]; monkeys.len()];
@@ -84,22 +88,19 @@ fn main() {
             while monkey.items.len() > 0 {
                 monkey.inspected_items += 1;
                 let item = monkey.items.pop_front().unwrap();
-                // println!("Inspect item with worry level {}", item);
                 let new_worry_level = calculate_new_worry_level(item, &monkey.operation);
-                // println!("Worry level: {}", new_worry_level);
-                let new_worry_level = new_worry_level / divisor;
-                // println!("Worry level: {}", new_worry_level);
+                let new_worry_level = match task {
+                    "1" => new_worry_level / divisor,
+                    "2" => new_worry_level % divisor,
+                    _ => unreachable!(),
+                };
 
                 if new_worry_level % monkey.test == 0 {
-                    // println!("{} IS divisible by {}", new_worry_level, monkey.test);
                     items[monkey.truth_branch].push(new_worry_level);
                 } else {
-                    // println!("{} is NOT divisible by {}", new_worry_level, monkey.test);
                     items[monkey.false_branch].push(new_worry_level);
                 }
             }
-
-            // println!("\n");
         }
 
         for i in 0..items.len() {
@@ -111,7 +112,7 @@ fn main() {
         }
     }
 
-    let mut most_active_list: Vec<i32> = monkeys.iter().map(|m| m.inspected_items).collect();
+    let mut most_active_list: Vec<i64> = monkeys.iter().map(|m| m.inspected_items).collect();
     most_active_list.sort();
     most_active_list.reverse();
     let one = most_active_list[0];
@@ -120,6 +121,10 @@ fn main() {
     println!("{:?}", most_active_list);
 
     println!("The level of monkey business is {}", one * two);
+}
+
+fn calculate_divisor(divisors: &Vec<WorryLevel>) -> WorryLevel {
+    divisors.iter().fold(1, |acc, x| acc * x)
 }
 
 #[allow(dead_code)]
